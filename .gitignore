@@ -213,3 +213,11 @@ pip-log.txt
 
 #Mr Developer
 .mr.developer.cfg
+
+#tbbscan
+tbbscan/tbbscan.vcxproj
+tbbscan/stdafx.cpp
+tbbscan/stdafx.h
+tbbscan/targetver.cpp
+tbbscan/tbbscan.vcxproj.filters
+tbbscan/ReadMe.txt
