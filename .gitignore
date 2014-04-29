@@ -221,3 +221,4 @@ tbbscan/stdafx.h
 tbbscan/targetver.cpp
 tbbscan/tbbscan.vcxproj.filters
 tbbscan/ReadMe.txt
+tbbscan.sln
