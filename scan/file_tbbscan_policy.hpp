@@ -1,0 +1,10 @@
+#ifndef TBBSCAN_FILE_TBBSCAN_POLICY_HPP
+#define TBBSCAN_FILE_TBBSCAN_POLICY_HPP
+
+class file_tbbscan_policy{
+
+
+
+};
+
+#endif /* TBBSCAN_FILE_TBBSCAN_POLICY_HPP */
