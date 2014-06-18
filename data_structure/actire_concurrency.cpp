@@ -1,15 +1,22 @@
 #include "tbbscan/data_structure/actire_concurrency.hpp"
 
-namespace controller
+namespace tbbscan
 {
     //_____________________ Goto_function _________________________________
-    template<typename SymbolT, typename AllocatorMemType>
+    template<typename SymbolT, bool AllocatorMemType>
     goto_function<SymbolT, AllocatorMemType>::
-    goto_function(std::vector<struct utils::meta_sig *> *msig_vec,
-            output_function_type&   output_fn)
+    goto_function() { }
+
+    template<typename SymbolT, bool AllocatorMemType>
+    bool goto_function<SymbolT, AllocatorMemType>::
+    create_goto(std::vector<struct utils::meta_sig *> *msig_vec,
+            output_function_type&    output_fn)
     {
         std::size_t new_state = 0;
         std::size_t  kw_index  = 0;
+
+        if(msig_vec->empty())
+            return false;
 
         std::vector<struct utils::meta_sig *>::iterator iter_msig_vec;
 
@@ -19,71 +26,200 @@ namespace controller
 
             struct utils::meta_sig *msig_ptr = *iter_msig_vec;
 
-            const char *sig_kw_ptr = msig_ptr->sig;
-            enter_node(sig_kw_ptr, new_state);
-            output_fn[new_state].insert(kw_index++);
+            enter_node(msig_ptr, new_state);
 
+            msig_ptr->keyword_index = kw_index++;
+            output_fn[new_state].push_back(msig_ptr);
 
         }//for
 
+        return true;
     }
 
-    template<typename SymbolT, typename AllocatorMemType>
-    size::size_t goto_function<SymbolT, AllocatorMemType>::
-    operator(std::size_t  state, SymbolT& symbol) const
+    template<typename SymbolT, bool AllocatorMemType>
+    std::size_t goto_function<SymbolT, AllocatorMemType>::
+    operator()(std::size_t  state, SymbolT const& symbol) const
     {
 
-        edges_type  const node = graph_[state];
+        edges_type  const& node = graph_[state];
 
-        typename edges_type::const_iteartor const& edge_it = node.find(symbol);
+        typename edges_type::const_iterator const& edge_it = node.find(symbol);
 
         if(edge_it != node.end()) {
-            struct utils::node_str *nstr = edge_it->second;
-            return nstr->state;
+            struct utils::meta_sig msig = edge_it->second;
+            return msig.state;
         } else {
             return (state == 0) ? 0 : AC_FAIL_STATE;
         }
     }
 
 
-    template<typename SymbolT, typename AllocatorMemType>
+    template<typename SymbolT, bool AllocatorMemType>
     void goto_function<SymbolT, AllocatorMemType>::
-    enter_node(struct utils::meta_sig * msig, std::size_t  new_state)
+    enter_node(struct utils::meta_sig *msig_ptr, std::size_t&   new_state)
     {
-				std::size_t state = 0;
-				edges_type * node;
-				struct node_str * nstr;
-        for(uint32_t count_sig = 0; count_sig < msig_ptr->sig_size; count_sig++) {
-					  if(state == graph_.size())
-						{	
-								graph_.resize(state + 1);
-						}//if
-					
-					  node = &graph_[state];
+        std::size_t state = 0;
+        uint32_t index = 0;
+        edges_type *node;
+        struct utils::meta_sig msig_internal;
 
-						typename edges_type::iterator edge = node->find(msig_ptr->sig[count_sig]);
-						nstr = edge->second;
-						if(edge == node->end())
-						{
-							break;
-						}//if
+        for(; index < msig_ptr->sig_size; index++) {
+            if(state == graph_.size()) {
+                graph_.resize(state + 1);
+            }//if
 
-						state = nstr->state;
+            node = &graph_[state];
+
+            typename edges_type::iterator edge = node->find(msig_ptr->sig[index]);
+
+            if(edge == node->end()) {
+                break;
+            }//if
+
+            state = edge->second.state;
 
         }//for
 
-				graph_.resize(graph_.size() + msig_ptr->sig_size; index++)
-				node = &graph_[state];
-			
-				for(uint32_t count_sig = 0; count_sig < msig_ptr->sig_size; count_sig++)
-				{
-						nstr = (*node)[msig_ptr->sig[count_sig]];
-						nstr->state = ++new_state;
-			
-						state = new_state;
-						node  = &graph_[state];			
-				} 
+        graph_.resize(graph_.size() + msig_ptr->sig_size - index);
+        node = &graph_[state];
+
+        for(; index < msig_ptr->sig_size; index++) {
+            (*node)[msig_ptr->sig[index]].state = ++new_state;
+            state = new_state;
+            node  = &graph_[state];
+        }
 
     }
 
-};
+    template class goto_function<char, true>;
+
+    //_____________________ Failure_function _________________________________
+    template<typename SymbolT, bool AllocatorMemType>
+    bool failure_function<SymbolT, AllocatorMemType>::
+    create_failure(goto_function<SymbolT, AllocatorMemType> const& _goto,
+            output_function_type&    output)
+    {
+        if(output.empty())
+            return false;
+
+        std::deque<std::size_t>  queue;
+        //Queue
+        queue_edges(_goto.get_nodes()[0], queue);
+
+        //While
+        while(!queue.empty()) {
+            std::size_t  r = queue.front();
+            queue.pop_front();
+
+            typename goto_function<SymbolT, AllocatorMemType>::edges_type const& node(_goto.get_nodes()[r]);
+            typename goto_function<SymbolT, AllocatorMemType>::edges_type::const_iterator edge_it;
+
+            for(edge_it = node.begin(); edge_it != node.end(); ++edge_it) {
+                std::pair<SymbolT, struct utils::meta_sig> const& edge(*edge_it);
+
+                SymbolT const& symbol_sig 				= edge.first;
+                struct utils::meta_sig  state_sig = edge.second;
+								/*
+                std::cout<<"Failure_function-f, Symbol : "<< symbol_sig <<", State : "<< state_sig.state
+                        <<", Table r : "<< r <<std::endl;
+								*/
+                queue.push_back(state_sig.state);
+                std::size_t state = table_[r];
+								/*
+                std::cout<<"Failure_function-f, State from table : " << state
+                        << ", Symbol : " << symbol_sig<<std::endl;
+								*/
+                while(_goto(state, symbol_sig) == AC_FAIL_STATE) {
+                    state  = table_[state];
+                }//while
+
+                table_[state_sig.state] = _goto(state, symbol_sig);
+
+                std::size_t state_table = state_sig.state;
+
+                std::vector<struct utils::meta_sig *> msig = output[state_table];
+                std::vector<struct utils::meta_sig *> msig_data = output[table_[state_sig.state]];
+                typename std::vector<struct utils::meta_sig *>::iterator iter_output_map;
+
+                for(iter_output_map = msig_data.begin();
+                        iter_output_map != msig_data.end();
+                        ++iter_output_map) {
+                    msig_data.push_back(*iter_output_map);
+                }
+
+                /*
+                std::cout<<"Output size : " << output.size() <<", State table : "<< state_table <<std::endl;
+                output[state_table].insert(
+                output[table_[state_sig.state]].begin(),
+                *output[table_[state_sig.state]].end());
+                */
+            }//for
+
+        }//while
+
+        return true;
+    }
+
+    template<typename SymbolT, bool AllocatorMemType>
+    void failure_function<SymbolT, AllocatorMemType>::
+    queue_edges(typename goto_function<SymbolT, AllocatorMemType>::edges_type const& node,
+            std::deque<std::size_t>&   queue)
+    {
+        typename goto_function<SymbolT, AllocatorMemType>::edges_type::const_iterator  edge_it;
+
+        for(edge_it = node.begin(); edge_it != node.end(); ++edge_it) {
+            std::pair<SymbolT, struct meta_sig> const& edge(*edge_it);
+            queue.push_back(edge.second.state);
+            table_[edge.second.state] = 0;
+        }
+    }
+
+    template class failure_function<char, true>;
+
+    //_____________________________ Actire_sig_engine __________________________________
+    template<typename SymbolT, bool AllocatorMemType>
+    bool actire_sig_engine<SymbolT, AllocatorMemType>::
+    create_engine(std::vector<struct meta_sig *> _msig_vec,
+            utils::filetype_code filetype)
+    {
+        typename std::vector<struct meta_sig *>::iterator iter_msig_vec;
+
+        if(_msig_vec.empty())
+            return false;
+
+        for(iter_msig_vec = _msig_vec.begin();
+                iter_msig_vec != _msig_vec.end();
+                ++iter_msig_vec) {
+            struct utils::meta_sig *msig = *iter_msig_vec;
+
+            if(filetype == msig->sig_type)
+                msig_vec_.push_back(msig);
+        }
+
+        //initial goto function;
+        goto_fn = new goto_function<SymbolT, AllocatorMemType>();
+
+        if(!goto_fn->create_goto(&msig_vec_, output_fn)) {
+            return false;
+        }
+
+        //initial failure function
+        failure_fn = new failure_function<SymbolT, AllocatorMemType>(*goto_fn);
+
+        if(!failure_fn->create_failure(*goto_fn, output_fn)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    template<typename SymbolT, bool AllocatorMemType>
+    bool actire_sig_engine<SymbolT, AllocatorMemType>::
+    filter_sig_support(struct meta_sig *msig)
+    {
+
+    }
+
+    template class actire_sig_engine<char, true>;
+
+}

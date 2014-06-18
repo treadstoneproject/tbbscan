@@ -12,5 +12,5 @@ libtbbscan_adir = $(includedir)/tbbscan
 libtbbscan_a_HEADERS = data_structure/actire_concurrency.hpp
 
 # library
-libtbbscan_a_SOURCES = $(libtbbscan_a_HEADERS)  data_structure/actire_concurrency.hpp
+libtbbscan_a_SOURCES = $(libtbbscan_a_HEADERS)  data_structure/actire_concurrency.cpp
 
