@@ -27,7 +27,7 @@ namespace tbbscan
     {
 
         public:
-            typedef tbb::concurrent_unordered_map<std::size_t, std::vector<struct utils::meta_sig *> >
+            typedef tbb::concurrent_unordered_map<std::size_t, std::set<struct utils::meta_sig *> >
                     output_function_type;
 
             typedef tbb::concurrent_unordered_map<SymbolT, struct meta_sig>  edges_type;
@@ -63,7 +63,7 @@ namespace tbbscan
     {
         public:
 
-            typedef tbb::concurrent_unordered_map<std::size_t, std::vector<struct utils::meta_sig *> >
+            typedef tbb::concurrent_unordered_map<std::size_t, std::set<struct utils::meta_sig *> >
                     output_function_type;
 
             failure_function(goto_function<SymbolT, AllocatorMemType> const& _goto) :
@@ -75,6 +75,7 @@ namespace tbbscan
                     output_function_type&    output);
 
             std::size_t operator()(std::size_t  state)const {
+                std::cout<<"Failure table_[state] : " << table_[state] <<std::endl;
                 return table_[state];
             }
 
@@ -93,50 +94,149 @@ namespace tbbscan
             tbb::concurrent_vector<std::size_t> table_;
 
     };
-
+    
     //Signature Engine.
     template<typename SymbolT, bool AllocatorMemType>
     class actire_sig_engine
     {
 
+    public:
+        typedef tbb::concurrent_unordered_map<std::size_t,
+                std::set<struct utils::meta_sig *> >  output_function_type;
+
+        bool create_engine(std::vector<struct meta_sig *> meta_sig_vec, utils::filetype_code filetype);
+
+        bool filter_sig_support(struct meta_sig *msig);
+
+        goto_function<SymbolT, AllocatorMemType>& get_goto_fn() {
+            return *goto_fn;
+        }
+
+        failure_function<SymbolT, AllocatorMemType>& get_failure_fn() {
+            return *failure_fn;
+        }
+
+        output_function_type& get_output_fn() {
+            return output_fn;
+        }
+
+       private:
+        std::vector<struct meta_sig *> msig_vec_;
+        goto_function<SymbolT, AllocatorMemType> *goto_fn;
+        failure_function<SymbolT, AllocatorMemType> *failure_fn;
+        output_function_type output_fn;
+    };
+    
+    //________________________ Result Callback __________________________________
+    template<typename KeywordResult>
+    struct result_callback {
+
+        result_callback(KeywordResult const& keywords, bool summary = false):
+            keywords_(keywords),
+            summary_(summary) {
+
+
+        }
+
+        void operator()(std::size_t what,
+                std::size_t where,
+                struct utils::meta_sig *msig) {
+
+            if(!summary_) {
+
+
+                std::cout<<"Msig state : "<< msig->state <<"Where : " << where_ <<std::endl;
+                std::cout<<"Search, virname : " << msig->virname <<std::endl;
+                std::cout<<"Search, sig     : " << msig->sig <<std::endl;
+                //std::cout<<"["<< where <<"]"<< keywords_[what] <<std::endl;
+
+                msig_result_vec.push_back(msig);
+
+            } else {
+                std::cout<<".";
+            }
+        }
+
+        std::vector<struct meta_sig *>&   get_msig_result_vec() {
+            return msig_result_vec;
+        }
+
+        KeywordResult const& keywords_;
+        std::vector<struct meta_sig *> msig_result_vec;
+        bool summary_;
+    };
+
+    //Make Search Engine.
+    /*
+    //_________________________ Actire search engine ____________________________
+    template<typename SymbolT, bool AllocatorMemType>
+    class actire_engine_factory
+    {
+
+    public:
+
+        //typedef iactire_engine *(*create_callback)();
+
+        static void register_actire_type(const std::string& type,  create_callback cb);
+
+        static void unregister_actire_type(const std::string& type);
+
+        static iactire_engine *create_actire_engine(const std::string& type);
+        */
+    //private:
+
+    //typedef std::map<std::string, create_callback> callback_map;
+    //static callback_map mapActireEngine;
+    //  };
+
+    template<typename SymbolT, bool AllocatorMemType>
+    class iactire_engine
+    {
         public:
-            typedef tbb::concurrent_unordered_map<std::size_t,
-                     std::vector<struct utils::meta_sig *> >  output_function_type;
+            typedef tbb::concurrent_unordered_map<std::size_t, std::set<struct utils::meta_sig *> >
+                    output_function_type;
 
-            bool create_engine(std::vector<struct meta_sig *> meta_sig_vec, utils::filetype_code filetype);
+            virtual bool hex_view_pos(uint64_t start_point_found,
+                    uint64_t end_point_found) = 0;
 
-            bool filter_sig_support(struct meta_sig *msig);
+            virtual bool search_parallel(goto_function<SymbolT, AllocatorMemType>& goto_fn,
+                    failure_function<SymbolT, AllocatorMemType>& failure_fn,
+                    output_function_type& output_fn,
+                    struct result_callback<std::vector<std::string> >& result_callback,
+                    uint64_t start_point_scan,
+                    uint64_t end_point_scan,
+                    const char *file_name,
+                    tbb::concurrent_vector<char> *binary_hex_input) = 0;
 
-            goto_function<SymbolT, AllocatorMemType>& get_goto_fn() {
-                return *goto_fn;
-            }
-
-            failure_function<SymbolT, AllocatorMemType>& get_failure_fn() {
-                return *failure_fn;
-            }
-	
-						 output_function_type & get_output_fn(){
-								return output_fn;
-						}
-
-            /*
-            create_goto(msig_vec, output_fn);
-            create_failure(goto_fn, output_fn);
-            */
-        private:
-            std::vector<struct meta_sig *> msig_vec_;
-            goto_function<SymbolT, AllocatorMemType> *goto_fn;
-            failure_function<SymbolT, AllocatorMemType> *failure_fn;
-            output_function_type output_fn;
     };
 
 
-}
+    template<typename SymbolT, bool AllocatorMemType>
+class actire_pe_engine : public iactire_engine<SymbolT, AllocatorMemType>
+    {
+        public:
+
+            typedef tbb::concurrent_unordered_map<std::size_t, std::set<struct utils::meta_sig *> >
+                    output_function_type;
 
 
+            virtual bool hex_view_pos(uint64_t start_point_found,
+                    uint64_t end_point_found);
 
-//Make Search Engine.
+            virtual bool search_parallel(goto_function<SymbolT, AllocatorMemType>& goto_fn,
+                    failure_function<SymbolT, AllocatorMemType>& failure_fn,
+                    output_function_type& output_fn,
+                    struct result_callback<std::vector<std::string> >& result_callback,
+                    uint64_t start_point_scan,
+                    uint64_t end_point_scan,
+                    const char *file_name,
+                    tbb::concurrent_vector<char> *binary_hex_input);
+    };
 
-//Make controller for signature and search engine.
+
+}// namespace
+
+
+//[] Make controller for signature and search engine.
 
 #endif /* TBBSCAN_ACTIRE_CONCURRENCY_HPP */
