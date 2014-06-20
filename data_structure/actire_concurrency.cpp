@@ -35,6 +35,9 @@ namespace tbbscan
     create_goto(std::vector<struct utils::meta_sig *> *msig_vec,
             output_function_type&    output_fn)
     {
+
+				logger->write_info("Sig-Engine, Create Goto Function support ", hnmav_util::format_type::type_center);
+
         std::size_t new_state = 0;
         std::size_t  kw_index  = 0;
 
@@ -121,6 +124,8 @@ namespace tbbscan
     create_failure(goto_function<SymbolT, AllocatorMemType> const& _goto,
             output_function_type&    output)
     {
+				logger->write_info("Sig-Engine, Create Failure Function support ", hnmav_util::format_type::type_center);
+
         if(output.empty())
             return false;
 
@@ -191,6 +196,8 @@ namespace tbbscan
     create_engine(std::vector<struct meta_sig *> _msig_vec,
             utils::filetype_code filetype)
     {
+				logger->write_info("Sig-Engine, Start Sig-Engine ", hnmav_util::format_type::type_center);
+
         typename std::vector<struct meta_sig *>::iterator iter_msig_vec;
 
         if(_msig_vec.empty())

@@ -27,6 +27,7 @@
 #include "tbb/concurrent_unordered_map.h"
 #include "tbb/concurrent_vector.h"
 
+#include "utils/logger/clutil_logger.hpp"
 #include "utils/base/system_code.hpp"
 #include "utils/base/common.hpp"
 
@@ -38,6 +39,7 @@ namespace tbbscan
     const bool tbb_allocator = true;
     const bool std_allocator = false;
 
+    namespace h_util = hnmav_util;
     using utils::meta_sig;
 
     template<typename SymbolT, bool AllocatorMemType>
@@ -76,6 +78,9 @@ namespace tbbscan
 
             node_type graph_;
 
+//logger
+            boost::shared_ptr<h_util::clutil_logging<std::string, int> > *logger_ptr;
+            h_util::clutil_logging<std::string, int>    *logger;
     };
 
 
@@ -98,7 +103,6 @@ namespace tbbscan
                     output_function_type&    output);
 
             std::size_t operator()(std::size_t  state)const {
-                std::cout<<"Failure table_[state] : " << table_[state] <<std::endl;
                 return table_[state];
             }
 
@@ -116,6 +120,9 @@ namespace tbbscan
 
             tbb::concurrent_vector<std::size_t> table_;
 
+//logger
+            boost::shared_ptr<h_util::clutil_logging<std::string, int> > *logger_ptr;
+            h_util::clutil_logging<std::string, int>    *logger;
     };
     
     //Signature Engine.
@@ -148,6 +155,10 @@ namespace tbbscan
         goto_function<SymbolT, AllocatorMemType> *goto_fn;
         failure_function<SymbolT, AllocatorMemType> *failure_fn;
         output_function_type output_fn;
+
+//logger
+            boost::shared_ptr<h_util::clutil_logging<std::string, int> > *logger_ptr;
+            h_util::clutil_logging<std::string, int>    *logger;
     };
     
     //________________________ Result Callback __________________________________
@@ -167,12 +178,13 @@ namespace tbbscan
 
             if(!summary_) {
 
+								logger->write_info("Search Result", hnmav_util::format_type::type_center);
 
-                std::cout<<"Msig state : "<< msig->state <<"Where : " << where_ <<std::endl;
-                std::cout<<"Search, virname : " << msig->virname <<std::endl;
-                std::cout<<"Search, sig     : " << msig->sig <<std::endl;
-                //std::cout<<"["<< where <<"]"<< keywords_[what] <<std::endl;
-
+								logger->write_info("Search-Parallel Engine. Found Virus name", 
+										boost::lexical_cast<std::string>(msig->virname));
+								logger->write_info("Search-Parallel Engine, Sig matching   ",
+                    boost::lexical_cast<std::string>(msig->sig));
+								//Vector contains result.
                 msig_result_vec.push_back(msig);
 
             } else {
@@ -187,6 +199,12 @@ namespace tbbscan
         KeywordResult const& keywords_;
         std::vector<struct meta_sig *> msig_result_vec;
         bool summary_;
+
+
+//logger
+            boost::shared_ptr<h_util::clutil_logging<std::string, int> > *logger_ptr;
+            h_util::clutil_logging<std::string, int>    *logger;
+
     };
 
     //Make Search Engine.
@@ -254,6 +272,10 @@ class actire_pe_engine : public iactire_engine<SymbolT, AllocatorMemType>
                     uint64_t end_point_scan,
                     const char *file_name,
                     tbb::concurrent_vector<char> *binary_hex_input);
+
+//logger
+            boost::shared_ptr<h_util::clutil_logging<std::string, int> > *logger_ptr;
+            h_util::clutil_logging<std::string, int>    *logger;
     };
 
 
