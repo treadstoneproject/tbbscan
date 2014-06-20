@@ -18,7 +18,7 @@
  * Goto/Failure function.
  * Sig Engine.
  * Scan Engine.                                        R.Chatsiri      18/06/2014
- * 
+ *
  */
 
 #include "tbbscan/data_structure/actire_concurrency.hpp"
@@ -36,7 +36,8 @@ namespace tbbscan
             output_function_type&    output_fn)
     {
 
-				logger->write_info("Sig-Engine, Create Goto Function support ", hnmav_util::format_type::type_center);
+        logger->write_info("Sig-Engine, Create Goto Function support ",
+                hnmav_util::format_type::type_center);
 
         std::size_t new_state = 0;
         std::size_t  kw_index  = 0;
@@ -124,7 +125,8 @@ namespace tbbscan
     create_failure(goto_function<SymbolT, AllocatorMemType> const& _goto,
             output_function_type&    output)
     {
-				logger->write_info("Sig-Engine, Create Failure Function support ", hnmav_util::format_type::type_center);
+        logger->write_info("Sig-Engine, Create Failure Function support ",
+                hnmav_util::format_type::type_center);
 
         if(output.empty())
             return false;
@@ -196,7 +198,7 @@ namespace tbbscan
     create_engine(std::vector<struct meta_sig *> _msig_vec,
             utils::filetype_code filetype)
     {
-				logger->write_info("Sig-Engine, Start Sig-Engine ", hnmav_util::format_type::type_center);
+        logger->write_info("Sig-Engine, Start Sig-Engine ", hnmav_util::format_type::type_center);
 
         typename std::vector<struct meta_sig *>::iterator iter_msig_vec;
 
@@ -293,5 +295,37 @@ namespace tbbscan
     }
 
     template class actire_pe_engine<char, true>;
+
+		//________________________ Actire_Engine_Factory ______________________________________
+    template<typename SymbolT, bool AllocatorMemType>
+    typename actire_engine_factory<SymbolT, AllocatorMemType>::callback_map
+    actire_engine_factory<SymbolT, AllocatorMemType>::mapActireEngine;
+
+    //ACtire concurrency engine factory.
+    template<typename SymbolT, bool AllocatorMemType>
+    void actire_engine_factory<SymbolT, AllocatorMemType>::
+    register_actire_type(const std::string& type, create_callback cb)
+    {
+        mapActireEngine[type] = cb;
+    }
+
+    //ACtire concurrency engine factory.
+    template<typename SymbolT, bool AllocatorMemType>
+    void actire_engine_factory<SymbolT, AllocatorMemType>::
+    unregister_actire_type(const std::string& type)
+    {
+        mapActireEngine.erase(type);
+    }
+
+    template<typename SymbolT, bool AllocatorMemType>
+    iactire_engine<SymbolT, AllocatorMemType> *actire_engine_factory<SymbolT, AllocatorMemType>::
+    create_actire_engine(const std::string& type)
+    {
+				typename callback_map::iterator iter_engine =   mapActireEngine.find(type);
+				if(iter_engine != mapActireEngine.end())
+					return (iter_engine->second)();
+    }
+
+		template class actire_engine_factory<char, true>;
 
 }//namespace

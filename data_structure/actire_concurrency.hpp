@@ -21,7 +21,7 @@
  * Goto/Failure function.
  * Sig Engine.
  * Scan Engine.                                        R.Chatsiri      18/06/2014
- * 
+ *
  */
 
 #include "tbb/concurrent_unordered_map.h"
@@ -44,6 +44,9 @@ namespace tbbscan
 
     template<typename SymbolT, bool AllocatorMemType>
     class goto_function;
+
+    template<typename SymbolT, bool AllocatorMemType>
+    class iactire_engine;
 
 
     //Make Goto Function.
@@ -78,7 +81,7 @@ namespace tbbscan
 
             node_type graph_;
 
-//logger
+            //logger
             boost::shared_ptr<h_util::clutil_logging<std::string, int> > *logger_ptr;
             h_util::clutil_logging<std::string, int>    *logger;
     };
@@ -120,47 +123,47 @@ namespace tbbscan
 
             tbb::concurrent_vector<std::size_t> table_;
 
-//logger
+            //logger
             boost::shared_ptr<h_util::clutil_logging<std::string, int> > *logger_ptr;
             h_util::clutil_logging<std::string, int>    *logger;
     };
-    
+
     //Signature Engine.
     template<typename SymbolT, bool AllocatorMemType>
     class actire_sig_engine
     {
 
-    public:
-        typedef tbb::concurrent_unordered_map<std::size_t,
-                std::set<struct utils::meta_sig *> >  output_function_type;
+        public:
+            typedef tbb::concurrent_unordered_map<std::size_t,
+                    std::set<struct utils::meta_sig *> >  output_function_type;
 
-        bool create_engine(std::vector<struct meta_sig *> meta_sig_vec, utils::filetype_code filetype);
+            bool create_engine(std::vector<struct meta_sig *> meta_sig_vec, utils::filetype_code filetype);
 
-        bool filter_sig_support(struct meta_sig *msig);
+            bool filter_sig_support(struct meta_sig *msig);
 
-        goto_function<SymbolT, AllocatorMemType>& get_goto_fn() {
-            return *goto_fn;
-        }
+            goto_function<SymbolT, AllocatorMemType>& get_goto_fn() {
+                return *goto_fn;
+            }
 
-        failure_function<SymbolT, AllocatorMemType>& get_failure_fn() {
-            return *failure_fn;
-        }
+            failure_function<SymbolT, AllocatorMemType>& get_failure_fn() {
+                return *failure_fn;
+            }
 
-        output_function_type& get_output_fn() {
-            return output_fn;
-        }
+            output_function_type& get_output_fn() {
+                return output_fn;
+            }
 
-       private:
-        std::vector<struct meta_sig *> msig_vec_;
-        goto_function<SymbolT, AllocatorMemType> *goto_fn;
-        failure_function<SymbolT, AllocatorMemType> *failure_fn;
-        output_function_type output_fn;
+        private:
+            std::vector<struct meta_sig *> msig_vec_;
+            goto_function<SymbolT, AllocatorMemType> *goto_fn;
+            failure_function<SymbolT, AllocatorMemType> *failure_fn;
+            output_function_type output_fn;
 
-//logger
+            //logger
             boost::shared_ptr<h_util::clutil_logging<std::string, int> > *logger_ptr;
             h_util::clutil_logging<std::string, int>    *logger;
     };
-    
+
     //________________________ Result Callback __________________________________
     template<typename KeywordResult>
     struct result_callback {
@@ -178,13 +181,13 @@ namespace tbbscan
 
             if(!summary_) {
 
-								logger->write_info("Search Result", hnmav_util::format_type::type_center);
+                logger->write_info("Search Result", hnmav_util::format_type::type_center);
 
-								logger->write_info("Search-Parallel Engine. Found Virus name", 
-										boost::lexical_cast<std::string>(msig->virname));
-								logger->write_info("Search-Parallel Engine, Sig matching   ",
-                    boost::lexical_cast<std::string>(msig->sig));
-								//Vector contains result.
+                logger->write_info("Search-Parallel Engine. Found Virus name",
+                        boost::lexical_cast<std::string>(msig->virname));
+                logger->write_info("Search-Parallel Engine, Sig matching   ",
+                        boost::lexical_cast<std::string>(msig->sig));
+                //Vector contains result.
                 msig_result_vec.push_back(msig);
 
             } else {
@@ -201,34 +204,35 @@ namespace tbbscan
         bool summary_;
 
 
-//logger
-            boost::shared_ptr<h_util::clutil_logging<std::string, int> > *logger_ptr;
-            h_util::clutil_logging<std::string, int>    *logger;
+        //logger
+        boost::shared_ptr<h_util::clutil_logging<std::string, int> > *logger_ptr;
+        h_util::clutil_logging<std::string, int>    *logger;
 
     };
 
     //Make Search Engine.
-    /*
+
     //_________________________ Actire search engine ____________________________
     template<typename SymbolT, bool AllocatorMemType>
     class actire_engine_factory
     {
 
-    public:
+        public:
 
-        //typedef iactire_engine *(*create_callback)();
+            typedef iactire_engine<SymbolT, AllocatorMemType> *(*create_callback)();
 
-        static void register_actire_type(const std::string& type,  create_callback cb);
+            static void register_actire_type(const std::string& type,  create_callback cb);
 
-        static void unregister_actire_type(const std::string& type);
+            static void unregister_actire_type(const std::string& type);
 
-        static iactire_engine *create_actire_engine(const std::string& type);
-        */
-    //private:
+            static iactire_engine<SymbolT, AllocatorMemType>
+            *create_actire_engine(const std::string& type);
 
-    //typedef std::map<std::string, create_callback> callback_map;
-    //static callback_map mapActireEngine;
-    //  };
+        private:
+
+            typedef std::map<std::string, create_callback> callback_map;
+            static callback_map mapActireEngine;
+    };
 
     template<typename SymbolT, bool AllocatorMemType>
     class iactire_engine
@@ -273,7 +277,11 @@ class actire_pe_engine : public iactire_engine<SymbolT, AllocatorMemType>
                     const char *file_name,
                     tbb::concurrent_vector<char> *binary_hex_input);
 
-//logger
+            static iactire_engine<SymbolT, AllocatorMemType> *create() {
+                new actire_pe_engine<SymbolT, AllocatorMemType>;
+            }
+        private:
+            //logger
             boost::shared_ptr<h_util::clutil_logging<std::string, int> > *logger_ptr;
             h_util::clutil_logging<std::string, int>    *logger;
     };
