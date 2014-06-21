@@ -175,25 +175,57 @@ namespace tbbscan
 
         }
 
-        void operator()(std::size_t what,
+
+
+        bool operator()(std::size_t what,
                 std::size_t where,
                 struct utils::meta_sig *msig) {
 
             if(!summary_) {
-
+								
                 logger->write_info("Search Result", hnmav_util::format_type::type_center);
 
+								logger->write_info("Search-Parallel Engine. Infected File",
+												boost::lexical_cast<std::string>(msig->file_name));
+								
                 logger->write_info("Search-Parallel Engine. Found Virus name",
                         boost::lexical_cast<std::string>(msig->virname));
+
                 logger->write_info("Search-Parallel Engine, Sig matching   ",
                         boost::lexical_cast<std::string>(msig->sig));
+
                 //Vector contains result.
                 msig_result_vec.push_back(msig);
-
             } else {
                 std::cout<<".";
             }
+					return true;
+        }// operator()
+
+        bool infected_file(struct utils::meta_sig *msig) {
+
+            if(!summary_) {
+								
+                logger->write_info("Search Result", hnmav_util::format_type::type_center);
+
+								logger->write_info("Search-Parallel Engine. Infected File",
+												boost::lexical_cast<std::string>(msig->file_name));
+								
+                logger->write_info("Search-Parallel Engine. Found Virus name",
+                        boost::lexical_cast<std::string>(msig->virname));
+
+                logger->write_info("Search-Parallel Engine, Sig matching   ",
+                        boost::lexical_cast<std::string>(msig->sig));
+
+                //Vector contains result.
+                msig_result_vec.push_back(msig);
+								return true;
+            } else {
+                std::cout<<".";
+            }
+					return false;
         }
+
 
         std::vector<struct meta_sig *>&   get_msig_result_vec() {
             return msig_result_vec;
@@ -281,6 +313,7 @@ class actire_pe_engine : public iactire_engine<SymbolT, AllocatorMemType>
                 new actire_pe_engine<SymbolT, AllocatorMemType>;
             }
         private:
+						const char * file_name_;
             //logger
             boost::shared_ptr<h_util::clutil_logging<std::string, int> > *logger_ptr;
             h_util::clutil_logging<std::string, int>    *logger;

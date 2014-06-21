@@ -53,11 +53,18 @@ namespace tbbscan
 
             struct utils::meta_sig *msig_ptr = *iter_msig_vec;
 
+            //logger->write_info_test("Sig-Engine, Load Signature ",
+            //        boost::lexical_cast<std::string>(msig_ptr->sig));
+
             enter_node(msig_ptr, new_state);
 
             msig_ptr->keyword_index = kw_index++;
             output_fn[new_state].insert(msig_ptr);
         }//for
+
+
+        //logger->write_info_test("Sig-Engine, Output function size :",
+        //        boost::lexical_cast<std::string>(output_fn.size()));
 
         return true;
     }
@@ -264,6 +271,15 @@ namespace tbbscan
     {
         std::size_t state_  = 0;
         std::size_t where_  = 0;
+        file_name_ = file_name;
+
+        // Binary stream vectors contains char hex. Loop checks char hex stream.
+        printf("\n---------------- Bit stream simple ---------------\n");
+
+        for(int count_start = start_point_scan; count_start < 60; count_start++)
+            printf("%c", binary_hex_input->at(count_start));
+
+        printf("\n--------------------------------------------------\n");
 
         for(int index = start_point_scan; index < end_point_scan; index++) {
             char const& input = binary_hex_input->at(index);
@@ -284,19 +300,34 @@ namespace tbbscan
                 for(iter_msig_vec = msig_vec.begin();
                         iter_msig_vec != msig_vec.end();
                         ++iter_msig_vec) {
-
                     struct utils::meta_sig *msig = *iter_msig_vec;
-                    result_callback(msig->state, where_, msig);
+                    msig->file_name = file_name_;// Set file name found;
+                    //TODO: Plan-00004 : Callback not support with multithread concurrency.
+                    //result_callback.infected_file(msig);
+                    logger->write_info("Search Result", hnmav_util::format_type::type_center);
+
+                    logger->write_info("Search-Parallel Engine. Infected File",
+                            boost::lexical_cast<std::string>(msig->file_name));
+
+                    logger->write_info("Search-Parallel Engine. Found Virus name",
+                            boost::lexical_cast<std::string>(msig->virname));
+
+                    logger->write_info("Search-Parallel Engine, Sig matching   ",
+                            boost::lexical_cast<std::string>(msig->sig));
+
+                    logger->write_info("Infected file found on search-engine. Done!");
                 }
             }//for
-        }
+        }//In check data.
+
+        return true;
+    }//for
 
 
-    }
 
     template class actire_pe_engine<char, true>;
 
-		//________________________ Actire_Engine_Factory ______________________________________
+    //________________________ Actire_Engine_Factory ______________________________________
     template<typename SymbolT, bool AllocatorMemType>
     typename actire_engine_factory<SymbolT, AllocatorMemType>::callback_map
     actire_engine_factory<SymbolT, AllocatorMemType>::mapActireEngine;
@@ -321,11 +352,12 @@ namespace tbbscan
     iactire_engine<SymbolT, AllocatorMemType> *actire_engine_factory<SymbolT, AllocatorMemType>::
     create_actire_engine(const std::string& type)
     {
-				typename callback_map::iterator iter_engine =   mapActireEngine.find(type);
-				if(iter_engine != mapActireEngine.end())
-					return (iter_engine->second)();
+        typename callback_map::iterator iter_engine =   mapActireEngine.find(type);
+
+        if(iter_engine != mapActireEngine.end())
+            return (iter_engine->second)();
     }
 
-		template class actire_engine_factory<char, true>;
+    template class actire_engine_factory<char, true>;
 
 }//namespace
