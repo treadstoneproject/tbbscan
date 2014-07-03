@@ -273,14 +273,7 @@ namespace tbbscan
         std::size_t where_  = 0;
         file_name_ = file_name;
 
-        // Binary stream vectors contains char hex. Loop checks char hex stream.
-        printf("\n---------------- Bit stream simple ---------------\n");
-
-        for(int count_start = start_point_scan; count_start < 60; count_start++)
-            printf("%c", binary_hex_input->at(count_start));
-
-        printf("\n--------------------------------------------------\n");
-
+        
         for(int index = start_point_scan; index < end_point_scan; index++) {
             char const& input = binary_hex_input->at(index);
             {
