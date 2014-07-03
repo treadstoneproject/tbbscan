@@ -13,7 +13,7 @@ Table of content
 
 <a name="file-types-support">File types support scanning.</a>
 
-* Programs read data from struct name "meta_sig" contains member variable name "std::string file_name".  File_name variable call to path contains binary file.
+* Programs read data from struct name "meta_sig" contains member variable name "const char * file_name".  File_name variable call to path contains binary file.
 * Hex characters of binary byte streams. 
 
 <a name="signature-support">Signature support scanning.</a>
