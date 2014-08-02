@@ -14,7 +14,7 @@
 * limitations under the License.
 */
 
-/*  Titles			                                          Authors	         Date
+/*  Titles																								Authors					 Date
  * Goto/Failure function.
  * Sig Engine.
  * Scan Engine.                                        R.Chatsiri      18/06/2014
@@ -154,7 +154,7 @@ namespace tbbscan
             for(edge_it = node.begin(); edge_it != node.end(); ++edge_it) {
                 std::pair<SymbolT, struct utils::meta_sig> const& edge(*edge_it);
 
-                SymbolT const& symbol_sig 				= edge.first;
+                SymbolT const& symbol_sig					= edge.first;
                 struct utils::meta_sig  state_sig = edge.second;
 
 

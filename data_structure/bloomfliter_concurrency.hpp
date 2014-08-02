@@ -17,7 +17,7 @@
 * limitations under the License.
 */
 
-/*  Titles			                                          Authors	         Date
+/*  Titles																								Authors					 Date
  * -Bloom filter run on load balance tbb and bloom filter
  *                                                        R.Chatsiri       02/06/2014
  * -Bloom filter
@@ -25,13 +25,13 @@
  */
 #include "utils/hash.hpp"
 #include "utils/md5_hash.hpp"
-#include "utils/filter_policy.hpp"
+#include "tbbscan/data_structure/filter_policy.hpp"
 
 namespace concurrency
 {
 
 
-   	/* 
+		/* 
     static uint32_t bloom_hash(const utils::slice& key)
     {
     return utils::convert::md5_hash(key.data());
